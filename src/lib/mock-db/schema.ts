@@ -8,9 +8,20 @@ export type PublicHackathon = {
   title: string;
   summary: string;
   status: "upcoming" | "ongoing" | "ended";
+  // 썸네일과 태그는 공개 가능한 정보로만 구성
+  thumbnailUrl?: string | null;
+  tags?: string[];
   startDate: string;
   endDate: string;
   prizeSummary: string;
+};
+
+// UI 편의를 위한 가공 데이터 타입
+// - participantCount: teams 정보로부터 계산
+// - periodText: 날짜 정보 가공 문자열
+export type HackathonWithStats = PublicHackathon & {
+  participantCount: number;
+  periodText: string;
 };
 
 export type PublicHackathonDetail = PublicHackathon & {
