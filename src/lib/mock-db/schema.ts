@@ -16,12 +16,32 @@ export type PublicHackathon = {
   prizeSummary: string;
 };
 
-// UI 편의를 위한 가공 데이터 타입
-// - participantCount: teams 정보로부터 계산
-// - periodText: 날짜 정보 가공 문자열
-export type HackathonWithStats = PublicHackathon & {
-  participantCount: number;
-  periodText: string;
+export type EvaluationMetric = {
+  id: string;
+  metricName: string;
+  description: string;
+  type: "vote" | "score";
+  weight?: number;
+};
+
+export type HackathonMilestone = {
+  id: string;
+  title: string;
+  date: string;
+};
+
+export type PrizeItem = {
+  rankLabel: string;
+  name: string;
+  amount: number;
+  description?: string;
+};
+
+export type SubmitArtifactType = "zip" | "url" | "pdf" | "image" | "other";
+
+export type SubmitConfig = {
+  guide: string;
+  allowedArtifactTypes: SubmitArtifactType[];
 };
 
 export type PublicHackathonDetail = PublicHackathon & {
@@ -29,6 +49,20 @@ export type PublicHackathonDetail = PublicHackathon & {
   evaluationCriteria?: string[];
   schedule?: { label: string; date: string }[];
   prizes?: { name: string; amount: number }[];
+  // 상세 페이지 전용 필드들
+  teamPolicy?: string;
+  notice?: string;
+  links?: { label: string; url: string }[];
+  evaluation?: {
+    metrics: EvaluationMetric[];
+  };
+  scheduleDetail?: {
+    milestones: HackathonMilestone[];
+  };
+  prize?: {
+    items: PrizeItem[];
+  };
+  submit?: SubmitConfig;
 };
 
 export type PublicTeam = {
@@ -53,5 +87,13 @@ export type HackathonSubmission = {
   teamId: string;
   title: string;
   submittedAt: string;
+};
+
+// UI 편의를 위한 가공 데이터 타입
+// - participantCount: teams 정보로부터 계산
+// - periodText: 날짜 정보 가공 문자열
+export type HackathonWithStats = PublicHackathon & {
+  participantCount: number;
+  periodText: string;
 };
 

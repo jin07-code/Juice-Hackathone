@@ -47,7 +47,7 @@ export async function getHackathonBySlug(
   if (!base) return null;
 
   const detailsMap =
-    (safeGetItem<Record<string, PublicHackathonDetail>>("hackathonDetails") ??
+    (safeGetItem<Record<string, PublicHackathonDetail>>("hackathon_detail") ??
       {}) as Record<string, PublicHackathonDetail>;
 
   const detail = Object.values(detailsMap).find((d) => d.id === base.id);
@@ -58,5 +58,12 @@ export async function getHackathonBySlug(
   }
 
   return detail;
+}
+
+// 상세 페이지 전용 Mock API
+export async function getHackathonDetail(
+  slug: string
+): Promise<PublicHackathonDetail | null> {
+  return getHackathonBySlug(slug);
 }
 
