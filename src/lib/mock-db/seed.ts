@@ -43,8 +43,9 @@ export async function ensureMockDbSeeded() {
     !!safeGetItem<PublicLeaderboardEntry[]>(STORAGE_KEYS.LEADERBOARDS);
   const hasSubmissions =
     !!safeGetItem<HackathonSubmission[]>(STORAGE_KEYS.SUBMISSIONS);
+  const hasUsers = !!safeGetItem<User[]>(STORAGE_KEYS.USERS); // 유저 데이터 체크 추가
 
-  if (hasHackathons && hasTeams && hasLeaderboards && hasSubmissions) {
+  if (hasHackathons && hasTeams && hasLeaderboards && hasSubmissions && hasUsers) {
     return;
   }
 
