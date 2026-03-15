@@ -12,3 +12,9 @@ export async function getLeaderboardByHackathonId(
   return board.filter((e) => e.hackathonId === hackathonId);
 }
 
+export async function getLeaderboard(hackathonSlug: string): Promise<PublicLeaderboardEntry[]> {
+  const board =
+    safeGetItem<PublicLeaderboardEntry[]>(STORAGE_KEYS.LEADERBOARDS) ?? [];
+  return board.filter((e) => e.hackathonId === hackathonSlug);
+}
+

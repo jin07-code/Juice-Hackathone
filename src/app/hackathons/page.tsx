@@ -222,8 +222,8 @@ export default function HackathonsPage() {
                       <span>{h.periodText}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-400">참가자 수</span>
-                      <span>{h.participantCount.toLocaleString()}명</span>
+                      <span className="text-slate-400">참가 팀 수</span>
+                      <span>{h.participantCount.toLocaleString()}팀</span>
                     </div>
                   </div>
                 </div>

@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 import { AsyncState } from "@/components/common/AsyncState";
+import { STORAGE_KEYS, safeGetItem, safeSetItem } from "@/lib/mock-db/storage";
 import { getHackathonDetail } from "@/lib/mock-db/api/hackathons";
 import { getLeaderboardByHackathonId } from "@/lib/mock-db/api/rankings";
 import type {
@@ -69,6 +70,11 @@ export default function HackathonDetailPage() {
   const [activeSection, setActiveSection] = useState<SectionId>("overview");
   const [submitType, setSubmitType] = useState<SubmitArtifactType | null>(null);
   const [isLeaderboardModalOpen, setLeaderboardModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitErrors, setSubmitErrors] = useState<Record<string, string>>({});
+  const [submitValues, setSubmitValues] = useState<Record<string, string>>({});
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const sectionRefs = useRef<Record<SectionId, HTMLElement | null>>({
     overview: null,
@@ -149,7 +155,7 @@ export default function HackathonDetailPage() {
     el.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
-  const isMyTeamExist = false; // 가상의 상태값으로 분기 테스트
+  const hasTeam = false; // 가상의 상태값으로 분기 테스트 (추후 실제 팀 상태와 연동)
 
   const headerSkeleton = (
     <div className="space-y-4">
@@ -222,60 +228,6 @@ export default function HackathonDetailPage() {
           const activeSubmitType =
             submitType ?? submit?.allowedArtifactTypes?.[0] ?? null;
 
-          const renderSubmitFields = () => {
-            if (!activeSubmitType) return null;
-            if (activeSubmitType === "url") {
-              return (
-                <div className="space-y-1">
-                  <label className="text-xs text-slate-300">
-                    제출 URL
-                  </label>
-                  <input
-                    type="url"
-                    className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-emerald-500"
-                    placeholder="https://github.com/..."
-                  />
-                </div>
-              );
-            }
-            if (activeSubmitType === "zip" || activeSubmitType === "pdf") {
-              return (
-                <div className="space-y-1">
-                  <label className="text-xs text-slate-300">
-                    파일 업로드
-                  </label>
-                  <div className="flex h-24 cursor-pointer items-center justify-center rounded-md border border-dashed border-slate-700 bg-slate-900 text-xs text-slate-400 hover:border-emerald-500 hover:text-emerald-300">
-                    {activeSubmitType.toUpperCase()} 파일을 드래그하거나
-                    클릭해서 업로드
-                  </div>
-                </div>
-              );
-            }
-            if (activeSubmitType === "image") {
-              return (
-                <div className="space-y-1">
-                  <label className="text-xs text-slate-300">
-                    이미지 업로드
-                  </label>
-                  <div className="flex h-24 cursor-pointer items-center justify-center rounded-md border border-dashed border-slate-700 bg-slate-900 text-xs text-slate-400 hover:border-emerald-500 hover:text-emerald-300">
-                    이미지를 드래그하거나 클릭해서 업로드
-                  </div>
-                </div>
-              );
-            }
-            return (
-              <div className="space-y-1">
-                <label className="text-xs text-slate-300">
-                  제출 내용
-                </label>
-                <textarea
-                  className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-emerald-500"
-                  rows={4}
-                />
-              </div>
-            );
-          };
-
           const milestones =
             hackathon.scheduleDetail?.milestones ??
             hackathon.schedule?.map((s, idx) => ({
@@ -287,41 +239,115 @@ export default function HackathonDetailPage() {
 
           const now = new Date();
 
+          const handleChangeSubmitValue = (key: string, value: string) => {
+            setSubmitValues((prev) => ({ ...prev, [key]: value }));
+            setSubmitErrors((prev) => {
+              const next = { ...prev };
+              delete next[key];
+              return next;
+            });
+          };
+
+          const handleFinalSubmit = async (e: React.FormEvent) => {
+            e.preventDefault();
+            if (!submit || !slug) return;
+
+            const items = submit.submissionItems ?? [];
+            const nextErrors: Record<string, string> = {};
+
+            items.forEach((item) => {
+              const v = submitValues[item.key];
+              if (!v || !v.trim()) {
+                nextErrors[item.key] = "필수 항목입니다.";
+              }
+            });
+
+            if (Object.keys(nextErrors).length > 0) {
+              setSubmitErrors(nextErrors);
+              return;
+            }
+
+            setIsSubmitting(true);
+            try {
+              const existing =
+                safeGetItem<any[]>(STORAGE_KEYS.SUBMISSIONS) ?? [];
+              const id = `sub-${Date.now().toString(36)}-${Math.random()
+                .toString(36)
+                .slice(2, 6)}`;
+              const record = {
+                id,
+                hackathonId: hackathon.id,
+                hackathonSlug: hackathon.slug,
+                teamId: "temp-team-id",
+                artifacts: { ...submitValues },
+                submittedAt: new Date().toISOString(),
+              };
+
+              // TODO: 실제 서버 연동 시, 제출 권한(해당 팀의 리더인지) 확인 및 타 팀 제출물 접근 차단(CORS, 인증 토큰 등) 로직이 백엔드 단에서 반드시 이루어져야 함
+
+              safeSetItem(STORAGE_KEYS.SUBMISSIONS, [...existing, record]);
+              setIsSubmitted(true);
+              setToastMessage("성공적으로 제출되었습니다.");
+              setTimeout(() => setToastMessage(null), 3000);
+            } finally {
+              setIsSubmitting(false);
+            }
+          };
+
+          const buildAcceptAttr = () => {
+            if (!submit?.allowedArtifactTypes?.length) return undefined;
+            const exts: string[] = [];
+            submit.allowedArtifactTypes.forEach((t) => {
+              if (t === "pdf") exts.push(".pdf", "application/pdf");
+              if (t === "zip") exts.push(".zip", "application/zip");
+              if (t === "image") exts.push("image/*");
+            });
+            return exts.join(",");
+          };
+
           return (
             <>
               {/* 헤더 영역 */}
               <header className="space-y-4">
-                <div className="flex flex-col gap-4 md:flex-row md:items-start">
-                  <div className="flex-1 space-y-2">
-                    <h1 className="text-xl font-semibold text-slate-50">
-                      {hackathon.title}
-                    </h1>
-                    <p className="text-sm text-slate-400">
-                      {hackathon.summary}
-                    </p>
-                    <div className="flex flex-wrap gap-2 text-xs">
-                      <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-300">
-                        {ddayLabel}
-                      </span>
-                      <span className="rounded-full bg-slate-800 px-3 py-1 text-slate-300">
-                        {hackathon.startDate} ~ {hackathon.endDate}
-                      </span>
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start">
+                    <div className="flex-1 space-y-2">
+                      <h1 className="text-xl font-semibold text-slate-50">
+                        {hackathon.title}
+                      </h1>
+                      <p className="text-sm text-slate-400">
+                        {hackathon.summary}
+                      </p>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-300">
+                          {ddayLabel}
+                        </span>
+                        <span className="rounded-full bg-slate-800 px-3 py-1 text-slate-300">
+                          {hackathon.startDate} ~ {hackathon.endDate}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="relative h-32 w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-900 md:h-40 md:w-64">
+                      {hackathon.thumbnailUrl ? (
+                        <Image
+                          src={hackathon.thumbnailUrl}
+                          alt={hackathon.title}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-xs text-slate-500">
+                          썸네일 준비중
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="relative h-32 w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-900 md:h-40 md:w-64">
-                    {hackathon.thumbnailUrl ? (
-                      <Image
-                        src={hackathon.thumbnailUrl}
-                        alt={hackathon.title}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-xs text-slate-500">
-                        썸네일 준비중
-                      </div>
-                    )}
-                  </div>
+                  <Link
+                    href="/hackathons"
+                    className="rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-200 hover:border-emerald-500 hover:text-emerald-300"
+                  >
+                    목록으로
+                  </Link>
                 </div>
               </header>
 
@@ -558,7 +584,7 @@ export default function HackathonDetailPage() {
                     팀
                   </h2>
                   <div className="flex flex-col gap-3 text-xs text-slate-300">
-                    {isMyTeamExist ? (
+                    {hasTeam ? (
                       <>
                         <p>
                           이 해커톤에 참가 중인 내 팀이 있습니다. 팀 정보
@@ -600,45 +626,104 @@ export default function HackathonDetailPage() {
                   </h2>
                   {submit ? (
                     <div className="space-y-4 text-xs text-slate-300">
-                      <p>{submit.guide}</p>
-                      {submit.allowedArtifactTypes?.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-[11px] text-slate-400">
-                            제출 형식 선택
+                      {submit.guide?.length ? (
+                        <ul className="list-disc space-y-1 pl-4 text-[11px] text-slate-300">
+                          {submit.guide.map((g, idx) => (
+                            <li key={idx}>{g}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+
+                      {!hasTeam ? (
+                        <div className="mt-3 space-y-3 rounded-md border border-slate-800 bg-slate-900 px-3 py-3">
+                          <p className="text-xs text-slate-300">
+                            제출하려면 먼저 팀을 구성해야 합니다.
                           </p>
-                          <div className="flex flex-wrap gap-2">
-                            {submit.allowedArtifactTypes.map((t) => (
-                              <button
-                                key={t}
-                                type="button"
-                                onClick={() => setSubmitType(t)}
-                                className={`rounded-full px-3 py-1 text-[11px] ${
-                                  activeSubmitType === t
-                                    ? "bg-emerald-500 text-slate-900"
-                                    : "bg-slate-800 text-slate-200 hover:bg-slate-700"
-                                }`}
-                              >
-                                {t.toUpperCase()}
-                              </button>
-                            ))}
-                          </div>
+                          <Link
+                            href={`/camp?hackathon=${hackathon.slug}`}
+                            className="inline-flex items-center justify-center rounded-md bg-slate-800 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500 hover:text-slate-900"
+                          >
+                            팀 구성하러 가기
+                          </Link>
                         </div>
+                      ) : (
+                        <>
+                          {submit.submissionItems &&
+                            submit.submissionItems.length > 0 && (
+                              <form
+                                className="space-y-3"
+                                onSubmit={handleFinalSubmit}
+                              >
+                                {submit.submissionItems.map((item) => {
+                                  const value = submitValues[item.key] ?? "";
+                                  const errorMsg =
+                                    submitErrors[item.key] ?? "";
+                                  const format = (item.format || "").toLowerCase();
+                                  const isFile =
+                                    format.includes("pdf") ||
+                                    format.includes("file");
+                                  const isUrlField =
+                                    format.includes("url") ||
+                                    format === "text_or_url";
+
+                                  return (
+                                    <div key={item.key} className="space-y-1">
+                                      <label className="text-xs text-slate-300">
+                                        {item.title}
+                                      </label>
+                                      {isFile ? (
+                                        <input
+                                          type="file"
+                                          className="w-full rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-[11px] text-slate-100 outline-none file:mr-2 file:rounded-md file:border-0 file:bg-slate-700 file:px-2 file:py-1 file:text-[11px] file:text-slate-100 focus:border-emerald-500"
+                                          accept={buildAcceptAttr()}
+                                          disabled={isSubmitting}
+                                          onChange={(e) =>
+                                            handleChangeSubmitValue(
+                                              item.key,
+                                              e.target.value
+                                            )
+                                          }
+                                        />
+                                      ) : (
+                                        <input
+                                          type={isUrlField ? "url" : "text"}
+                                          className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-100 outline-none focus:border-emerald-500"
+                                          value={value}
+                                          onChange={(e) =>
+                                            handleChangeSubmitValue(
+                                              item.key,
+                                              e.target.value
+                                            )
+                                          }
+                                          disabled={isSubmitting}
+                                          placeholder={
+                                            isUrlField ? "https://..." : ""
+                                          }
+                                        />
+                                      )}
+                                      {errorMsg && (
+                                        <p className="text-[11px] text-red-400">
+                                          {errorMsg}
+                                        </p>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                                <button
+                                  type="submit"
+                                  className="mt-2 inline-flex items-center justify-center rounded-md bg-emerald-500 px-4 py-2 text-xs font-semibold text-slate-900 hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-emerald-700/70"
+                                  disabled={isSubmitting}
+                                >
+                                  {isSubmitting
+                                    ? "제출 중..."
+                                    : isSubmitted
+                                    ? "수정하기"
+                                    : "최종 제출하기"}
+                                </button>
+                              </form>
+                            )}
+                        </>
                       )}
-                      <form
-                        className="space-y-3"
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          // TODO: 실제 API 연동 시 타 팀의 제출물이나 내부 정보가 노출되지 않도록 서버단 권한 체크 필요
-                        }}
-                      >
-                        {renderSubmitFields()}
-                        <button
-                          type="submit"
-                          className="mt-2 inline-flex items-center justify-center rounded-md bg-emerald-500 px-4 py-2 text-xs font-semibold text-slate-900 hover:bg-emerald-400"
-                        >
-                          제출하기
-                        </button>
-                      </form>
                     </div>
                   ) : (
                     <p className="text-xs text-slate-400">
@@ -755,6 +840,12 @@ export default function HackathonDetailPage() {
                       )}
                     </div>
                   </div>
+                </div>
+              )}
+
+              {toastMessage && (
+                <div className="fixed bottom-4 right-4 z-50 rounded-md bg-slate-900 px-4 py-2 text-xs text-emerald-300 shadow-lg shadow-black/40">
+                  {toastMessage}
                 </div>
               )}
             </>

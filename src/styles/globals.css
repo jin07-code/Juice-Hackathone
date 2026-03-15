@@ -11,3 +11,12 @@ body {
   @apply bg-slate-950 text-slate-50;
 }
 
+/* line-clamp 유틸리티 (Tailwind 플러그인 없이 사용) */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+

@@ -14,8 +14,8 @@ function buildPeriodText(startDate: string, endDate: string): string {
 }
 
 /**
- * 해커톤 목록을 가져오면서 각 해커톤별 참가자 수를 계산합니다.
- * 참가자 수 = 해당 해커톤에 속한 팀들의 memberCount 총합
+ * 해커톤 목록을 가져오면서 각 해커톤별 참가 팀 수를 계산합니다.
+ * 참가 팀 수 = 해당 해커톤에 속한 팀들의 개수
  */
 export async function getHackathons(): Promise<HackathonWithStats[]> {
   const hackathons =
@@ -25,9 +25,9 @@ export async function getHackathons(): Promise<HackathonWithStats[]> {
   const byHackathon: Record<string, number> = {};
   for (const team of teams) {
     // 팀 정보에는 비공개 정보가 있을 수 있지만,
-    // 여기서는 memberCount 만 사용하므로 개인정보는 접근하지 않습니다.
+    // 여기서는 팀 개수만 세므로 개인정보는 접근하지 않습니다.
     const current = byHackathon[team.hackathonId] ?? 0;
-    byHackathon[team.hackathonId] = current + (team.memberCount ?? 0);
+    byHackathon[team.hackathonId] = current + 1; // 팀 1개로 카운트
   }
 
   const withStats: HackathonWithStats[] = hackathons.map((h) => ({

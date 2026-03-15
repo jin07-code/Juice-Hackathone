@@ -163,6 +163,7 @@ export async function ensureMockDbSeeded() {
             overview.teamPolicy.allowSolo ? "가능" : "불가"
           }, 최대 ${overview.teamPolicy.maxTeamSize}명`
         : undefined,
+      teamPolicyMaxTeamSize: overview.teamPolicy?.maxTeamSize,
       notice: noticeArr.join(" "),
       links,
       evaluation: {
@@ -176,8 +177,9 @@ export async function ensureMockDbSeeded() {
       },
       submit: allowedArtifactTypes.length
         ? {
-            guide: guideArr.join("\n"),
+            guide: guideArr,
             allowedArtifactTypes,
+            submissionItems: submitSection.submissionItems ?? [],
           }
         : undefined,
     };
@@ -199,6 +201,12 @@ export async function ensureMockDbSeeded() {
       // hackathonSlug 를 hackathonId 로 사용 (slug 기반)
       hackathonId: item.hackathonSlug,
       memberCount: item.memberCount,
+      isOpen: item.isOpen,
+      lookingFor: item.lookingFor ?? [],
+      intro: item.intro,
+      // 연락처 전체를 저장하지 않고 공개용 URL만 별도 필드로 보관합니다.
+      contactUrl: item.contact?.url,
+      createdAt: item.createdAt,
     })
   );
 
@@ -216,6 +224,9 @@ export async function ensureMockDbSeeded() {
         teamName: entry.teamName,
         score: entry.score,
         rank: entry.rank,
+        submittedAt: entry.submittedAt,
+        scoreBreakdown: entry.scoreBreakdown,
+        artifacts: entry.artifacts,
       });
     });
   }
