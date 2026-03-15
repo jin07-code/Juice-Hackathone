@@ -5,11 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 import { AsyncState } from "@/components/common/AsyncState";
 import { getTeamsByHackathon, createTeam } from "@/lib/mock-db/api/camp";
 import { getHackathonDetail } from "@/lib/mock-db/api/hackathons";
+import { useAuth } from "@/contexts/AuthContext";
 import type { PublicHackathonDetail, PublicTeam } from "@/lib/mock-db/schema";
 
 export default function CampPage() {
   const searchParams = useSearchParams();
   const hackathonSlug = searchParams.get("hackathon");
+  const { user } = useAuth(); // 현재 로그인된 유저
 
   const [data, setData] = useState<PublicTeam[] | null>(null);
   const [hackathon, setHackathon] = useState<PublicHackathonDetail | null>(null);
@@ -144,10 +146,17 @@ export default function CampPage() {
         </div>
         <button
           type="button"
-          className="rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-slate-900 hover:bg-emerald-400"
-          onClick={() => setCreateOpen(true)}
+          className="rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-slate-900 hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-emerald-700/70"
+          onClick={() => {
+            if (!user) {
+              alert("로그인이 필요합니다.");
+              return;
+            }
+            setCreateOpen(true);
+          }}
+          disabled={!user}
         >
-          팀 생성하기
+          {user ? "팀 생성하기" : "로그인 필요"}
         </button>
       </div>
 
@@ -218,6 +227,10 @@ export default function CampPage() {
               const badgeClass = isOpen
                 ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/40"
                 : "bg-slate-700/20 text-slate-300 border-slate-600/60";
+              
+              // 현재 유저가 이 팀의 멤버인지 확인
+              const isMyTeam = user && t.members?.includes(user.id);
+              
               return (
                 <div
                   key={t.id}
@@ -226,6 +239,11 @@ export default function CampPage() {
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <h2 className="text-sm font-semibold text-slate-50">
                       {t.name}
+                      {isMyTeam && (
+                        <span className="ml-2 text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full">
+                          내 팀
+                        </span>
+                      )}
                     </h2>
                     <span
                       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] ${badgeClass}`}
@@ -254,18 +272,30 @@ export default function CampPage() {
                     </p>
                   )}
                   <div className="mt-3 flex justify-end">
-                    <button
-                      type="button"
-                      className={`rounded-md px-3 py-1.5 text-[11px] ${
-                        isOpen
-                          ? "cursor-pointer bg-slate-800 text-emerald-300 hover:bg-slate-700"
-                          : "cursor-not-allowed bg-slate-900 text-slate-500"
-                      }`}
-                      onClick={() => handleOpenContact(t.contactUrl)}
-                      disabled={!isOpen}
-                    >
-                      {isOpen ? "연락하기" : "모집 마감"}
-                    </button>
+                    {isMyTeam ? (
+                      <button
+                        type="button"
+                        className="rounded-md bg-emerald-500 px-3 py-1.5 text-[11px] font-medium text-slate-900 hover:bg-emerald-400"
+                        onClick={() => {
+                          alert(`내 팀 "${t.name}" 정보 페이지 (개발 예정)`);
+                        }}
+                      >
+                        내 팀 정보 보기
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className={`rounded-md px-3 py-1.5 text-[11px] ${
+                          isOpen
+                            ? "cursor-pointer bg-slate-800 text-emerald-300 hover:bg-slate-700"
+                            : "cursor-not-allowed bg-slate-900 text-slate-500"
+                        }`}
+                        onClick={() => handleOpenContact(t.contactUrl)}
+                        disabled={!isOpen}
+                      >
+                        {isOpen ? "연락하기" : "모집 마감"}
+                      </button>
+                    )}
                   </div>
                 </div>
               );

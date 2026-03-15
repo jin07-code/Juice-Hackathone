@@ -5,6 +5,8 @@ const STORAGE_KEYS = {
   TEAMS: "teams",
   SUBMISSIONS: "submissions",
   LEADERBOARDS: "leaderboards",
+  USERS: "users",
+  CURRENT_USER: "currentUser",
 } as const;
 
 export { STORAGE_KEYS };

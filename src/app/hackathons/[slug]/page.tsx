@@ -13,11 +13,14 @@ import {
 import { AsyncState } from "@/components/common/AsyncState";
 import { STORAGE_KEYS, safeGetItem, safeSetItem } from "@/lib/mock-db/storage";
 import { getHackathonDetail } from "@/lib/mock-db/api/hackathons";
-import { getLeaderboardByHackathonId } from "@/lib/mock-db/api/rankings";
+import { getLeaderboard } from "@/lib/mock-db/api/rankings";
+import { useAuth } from "@/contexts/AuthContext";
+import { hasUserTeamInHackathon } from "@/services/mockAuth";
 import type {
   PublicHackathonDetail,
-  PublicLeaderboardEntry,
+  HackathonSubmission,
   SubmitArtifactType,
+  PublicLeaderboardEntry,
 } from "@/lib/mock-db/schema";
 
 type SectionId =
@@ -57,6 +60,8 @@ function computeDdayLabel(detail: PublicHackathonDetail): string {
 
 export default function HackathonDetailPage() {
   const { slug } = useParams<{ slug: string }>();
+  const { user } = useAuth(); // 현재 로그인된 유저
+  
   const [data, setData] = useState<PublicHackathonDetail | null>(null);
   const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -106,7 +111,7 @@ export default function HackathonDetailPage() {
         // 리더보드 상위 5팀 미리보기
         setLeaderboardLoading(true);
         try {
-          const entries = await getLeaderboardByHackathonId(detail.id);
+          const entries = await getLeaderboard(detail.id);
           const sorted = [...entries].sort((a, b) => a.rank - b.rank);
           setLeaderboardPreview(sorted.slice(0, 5));
         } finally {
@@ -646,7 +651,16 @@ export default function HackathonDetailPage() {
                         </ul>
                       ) : null}
 
-                      {!hasTeam ? (
+                      {!user ? (
+                        <div className="mt-3 space-y-3 rounded-md border border-slate-800 bg-slate-900 px-3 py-3">
+                          <p className="text-xs text-slate-300">
+                            제출하려면 먼저 로그인해야 합니다.
+                          </p>
+                          <div className="text-xs text-slate-400">
+                            상단 네비게이션에서 유저를 선택해주세요.
+                          </div>
+                        </div>
+                      ) : !hasTeam ? (
                         <div className="mt-3 space-y-3 rounded-md border border-slate-800 bg-slate-900 px-3 py-3">
                           <p className="text-xs text-slate-300">
                             제출하려면 먼저 팀을 구성해야 합니다.

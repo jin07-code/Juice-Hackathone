@@ -11,6 +11,7 @@ import type {
   EvaluationMetric,
   HackathonMilestone,
   SubmitArtifactType,
+  User,
 } from "./schema";
 
 // 제공된 예시 JSON을 직접 import 해서 사용합니다.
@@ -201,6 +202,7 @@ export async function ensureMockDbSeeded() {
       // hackathonSlug 를 hackathonId 로 사용 (slug 기반)
       hackathonId: item.hackathonSlug,
       memberCount: item.memberCount,
+      members: generateTeamMembers(item.teamCode), // 유저 ID 매핑
       isOpen: item.isOpen,
       lookingFor: item.lookingFor ?? [],
       intro: item.intro,
@@ -209,6 +211,53 @@ export async function ensureMockDbSeeded() {
       createdAt: item.createdAt,
     })
   );
+
+  // 4) 유저 데이터 생성
+  const users: User[] = [
+    {
+      id: "u1",
+      name: "김코딩",
+      role: "Frontend",
+      email: "kim@test.com",
+      avatar: "👨‍💻",
+      createdAt: "2026-01-15T10:00:00+09:00",
+    },
+    {
+      id: "u2", 
+      name: "이개발",
+      role: "Backend",
+      email: "lee@test.com",
+      avatar: "👨‍💻",
+      createdAt: "2026-01-16T11:00:00+09:00",
+    },
+    {
+      id: "u3",
+      name: "박디자인",
+      role: "Designer", 
+      email: "park@test.com",
+      avatar: "👩‍🎨",
+      createdAt: "2026-01-17T12:00:00+09:00",
+    },
+    {
+      id: "u4",
+      name: "최기획",
+      role: "PM",
+      email: "choi@test.com", 
+      avatar: "👩‍💼",
+      createdAt: "2026-01-18T13:00:00+09:00",
+    },
+  ];
+
+  // 팀별 유저 할당 함수
+  function generateTeamMembers(teamCode: string): string[] {
+    const teamMemberMap: Record<string, string[]> = {
+      "T-ALPHA": ["u1", "u2"], // 김코딩, 이개발
+      "T-BETA": ["u3"], // 박디자인
+      "T-HANDOVER-01": ["u1", "u4"], // 김코딩, 최기획
+      "T-HANDOVER-02": ["u2", "u3"], // 이개발, 박디자인
+    };
+    return teamMemberMap[teamCode] || [];
+  }
 
   // 4) 리더보드 매핑
   const leaderboards: PublicLeaderboardEntry[] = [];
@@ -242,6 +291,7 @@ export async function ensureMockDbSeeded() {
   safeSetItem(STORAGE_KEYS.TEAMS, teams);
   safeSetItem(STORAGE_KEYS.LEADERBOARDS, leaderboards);
   safeSetItem(STORAGE_KEYS.SUBMISSIONS, submissions);
+  safeSetItem(STORAGE_KEYS.USERS, users); // 유저 데이터 저장
   // 상세 정보는 별도 키로 관리합니다.
   safeSetItem("hackathon_detail", detailsMap);
 }

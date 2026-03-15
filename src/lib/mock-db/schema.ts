@@ -78,10 +78,21 @@ export type PublicTeam = {
   name: string;
   hackathonId: string;
   memberCount: number;
+  members?: string[]; // 유저 ID 배열
   isOpen?: boolean;
   lookingFor?: string[];
   intro?: string;
   contactUrl?: string;
+  createdAt?: string;
+};
+
+// 유저 데이터 타입
+export type User = {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+  avatar?: string;
   createdAt?: string;
 };
 

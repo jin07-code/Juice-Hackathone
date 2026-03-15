@@ -3,6 +3,7 @@ import "@/styles/globals.css";
 import { GNB } from "@/components/layout/GNB";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { MockDbProvider } from "./MockDbProvider";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata: Metadata = {
   title: "Hackathon Platform",
@@ -20,7 +21,9 @@ export default function RootLayout({
         <div className="flex min-h-screen flex-col">
           <GNB />
           <PageContainer>
-            <MockDbProvider>{children}</MockDbProvider>
+            <AuthProvider>
+              <MockDbProvider>{children}</MockDbProvider>
+            </AuthProvider>
           </PageContainer>
         </div>
       </body>
