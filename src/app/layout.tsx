@@ -18,14 +18,14 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="min-h-screen bg-slate-950 text-slate-50">
-        <div className="flex min-h-screen flex-col">
-          <GNB />
-          <PageContainer>
-            <AuthProvider>
+        <AuthProvider>
+          <div className="flex min-h-screen flex-col">
+            <GNB />
+            <PageContainer>
               <MockDbProvider>{children}</MockDbProvider>
-            </AuthProvider>
-          </PageContainer>
-        </div>
+            </PageContainer>
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );
