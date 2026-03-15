@@ -378,7 +378,9 @@ export default function HackathonDetailPage() {
                 {/* 1. 개요 / 안내 */}
                 <section
                   id="overview"
-                  ref={(el) => (sectionRefs.current.overview = el)}
+                  ref={(el) => {
+    sectionRefs.current.overview = el;
+  }}
                   className="rounded-lg border border-slate-800 bg-slate-900/60 p-4"
                 >
                   <h2 className="mb-3 text-sm font-semibold text-slate-50">
@@ -425,7 +427,9 @@ export default function HackathonDetailPage() {
                 {/* 2. 평가 */}
                 <section
                   id="eval"
-                  ref={(el) => (sectionRefs.current.eval = el)}
+                  ref={(el) => {
+    sectionRefs.current.eval = el;
+  }}
                   className="rounded-lg border border-slate-800 bg-slate-900/60 p-4"
                 >
                   <h2 className="mb-3 text-sm font-semibold text-slate-50">
@@ -490,7 +494,9 @@ export default function HackathonDetailPage() {
                 {/* 3. 일정 */}
                 <section
                   id="schedule"
-                  ref={(el) => (sectionRefs.current.schedule = el)}
+                  ref={(el) => {
+    sectionRefs.current.schedule = el;
+  }}
                   className="rounded-lg border border-slate-800 bg-slate-900/60 p-4"
                 >
                   <h2 className="mb-3 text-sm font-semibold text-slate-50">
@@ -537,7 +543,9 @@ export default function HackathonDetailPage() {
                 {/* 4. 상금 */}
                 <section
                   id="prize"
-                  ref={(el) => (sectionRefs.current.prize = el)}
+                  ref={(el) => {
+    sectionRefs.current.prize = el;
+  }}
                   className="rounded-lg border border-slate-800 bg-slate-900/60 p-4"
                 >
                   <h2 className="mb-3 text-sm font-semibold text-slate-50">
@@ -577,7 +585,9 @@ export default function HackathonDetailPage() {
                 {/* 5. 팀 */}
                 <section
                   id="teams"
-                  ref={(el) => (sectionRefs.current.teams = el)}
+                  ref={(el) => {
+    sectionRefs.current.teams = el;
+  }}
                   className="rounded-lg border border-slate-800 bg-slate-900/60 p-4"
                 >
                   <h2 className="mb-3 text-sm font-semibold text-slate-50">
@@ -618,7 +628,9 @@ export default function HackathonDetailPage() {
                 {/* 6. 제출 */}
                 <section
                   id="submit"
-                  ref={(el) => (sectionRefs.current.submit = el)}
+                  ref={(el) => {
+    sectionRefs.current.submit = el;
+  }}
                   className="rounded-lg border border-slate-800 bg-slate-900/60 p-4"
                 >
                   <h2 className="mb-3 text-sm font-semibold text-slate-50">
@@ -735,7 +747,9 @@ export default function HackathonDetailPage() {
                 {/* 7. 리더보드 (미리보기) */}
                 <section
                   id="leaderboard"
-                  ref={(el) => (sectionRefs.current.leaderboard = el)}
+                  ref={(el) => {
+    sectionRefs.current.leaderboard = el;
+  }}
                   className="rounded-lg border border-slate-800 bg-slate-900/60 p-4"
                 >
                   <h2 className="mb-3 text-sm font-semibold text-slate-50">
